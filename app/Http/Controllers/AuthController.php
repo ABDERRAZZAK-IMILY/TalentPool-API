@@ -2,68 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\LoginRequest;
+use App\Services\AuthService;
 
 class AuthController extends Controller
 {
+    protected $authService;
 
-    public function register(Request $request)
+    public function __construct(AuthService $authService)
     {
-    // Create new user
-    $user = User::create([
-    'name' => $request->name,
-    'email' => $request->email,
-    'password' => Hash::make($request->password),
-    'role' => $request->role,
-    ]);
-    // Generate JWT token
-    $token = auth('api')->login($user);
-    // Return user data and token
-    return response()->json([
-    'status' => 'success',
-    'message' => 'User registered successfully',
-    'user' => $user,
-    'authorization' => [
-    'token' => $token,
-    'type' => 'bearer',
-    ]
-    ], 201);
+        $this->authService = $authService;
     }
 
-    public function login(Request $request)
+    public function register(RegisterRequest $request)
     {
-     
-  
-$request->validate([
-    'email' => 'required|email',
-    'password' => 'required',
-]);
+        $userData = $this->authService->register($request->validated());
+        return response()->json($userData, 201);
+    }
 
+    public function login(LoginRequest $request)
+    {
+        $token = $this->authService->login($request->only('email', 'password'));
+        return $token
+            ? response()->json(['token' => $token])
+            : response()->json(['error' => 'the data is not correct'], 401);
+    }
 
-$credentials = $request->only('email', 'password');
+    public function me()
+    {
+        return response()->json($this->authService->getAuthenticatedUser());
+    }
 
-if (!$token = auth('api')->attempt($credentials)) {
-    return response()->json([
-        'status' => 'error',
-        'message' => 'Unauthorized',
-    ], 401);
-}
-
-$user = auth('api')->user();
-
-return response()->json([
-    'status' => 'success',
-    'user' => $user,
-    'authorization' => [
-        'token' => $token,
-        'type' => 'bearer',
-    ]
-]);
-
-
-}
-
+    public function logout()
+    {
+        $this->authService->logout();
+        return response()->json(['message' => 'Successfully logged out']);
+    }
 }

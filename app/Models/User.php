@@ -75,7 +75,25 @@ public function getJWTIdentifier()
  */
 public function getJWTCustomClaims()
 {
-    return [];
+    return [
+        'role' => $this->role,
+    ];
+}
+
+
+public function isRecruiter()
+{
+    return $this->role === 'recruteur';
+}
+
+public function isCandidate()
+{
+    return $this->role === 'candidat';
+}
+
+public function isAdmin()
+{
+    return $this->role === 'admin';
 }
 
 }
