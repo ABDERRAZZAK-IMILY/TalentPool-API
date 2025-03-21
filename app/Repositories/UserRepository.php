@@ -16,7 +16,7 @@ class UserRepository
     /**
      * Create a new user in the database
      *
-     * @param array $data Required data to create user (e.g., name, email, password, role)
+     * @param array $data Required data to create user (e.g., name, email, password)
      * @return User The created object
      */
     public function create(array $data)
