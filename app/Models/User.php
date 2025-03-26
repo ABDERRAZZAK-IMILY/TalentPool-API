@@ -49,7 +49,7 @@ class User extends Authenticatable implements JWTSubject
 
 public function Annonces(){
   
-    return $this->hasMany(Annonces::class);
+    return $this->hasMany(Annonce::class);
 
 }
 

@@ -33,11 +33,13 @@ class AnnonceService
     
     public function updateAnnonce($id, array $data)
     {
-    
+        $this->AnnonceReposotory->update($id, $data);
+        return ['message' => 'Updated successfully'];
     }
 
     public function deleteAnnonce($id)
     {
-      
+        $this->AnnonceReposotory->delete($id);
+        return ['message' => 'Deleted successfully'];
     }
 }

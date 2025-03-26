@@ -2,21 +2,17 @@
 
 namespace App\Repositories;
 
-use App\Models\Annonces;
-use App\Models\User;
-
+use App\Models\Annonce;
 use App\Repositories\Interfaces\AnnoncesRepositoryInterface;
 
-
-class AnnoncesRepository  implements AnnoncesRepositoryInterface 
+class AnnoncesRepository implements AnnoncesRepositoryInterface 
 {
     protected $model;
 
-    public function __construct()
+    public function __construct(Annonce $annonces)
     {
-        $this->model = new User();
+        $this->model = $annonces;
     }
-
 
     public function create(array $data)
     {
@@ -33,9 +29,22 @@ class AnnoncesRepository  implements AnnoncesRepositoryInterface
         return $this->model->all();
     }
 
-    public function update(Annonces $annonces, array $data)
+    public function update($id, array $data)
     {
-        $annonces->update($data);
-        return $annonces;
+        $annonce = $this->find($id);
+        if ($annonce) {
+            $annonce->update($data);
+            return $annonce;
+        }
+        return null;
+    }
+
+    public function delete($id)
+    {
+        $annonce = $this->find($id);
+        if ($annonce) {
+            return $annonce->delete();
+        }
+        return false;
     }
 }
