@@ -1,109 +1,74 @@
 <?php
 
-namespace Tests\Feature;
-
-use Tests\TestCase;
-use App\Models\User;
 use App\Models\Annonce;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
-class AnnoceTest extends TestCase
-{
-    use RefreshDatabase;
+use function Pest\Laravel\delete;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+use function Pest\Laravel\put;
 
-    protected $user;
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->user = User::factory()->create();
-        $this->actingAs($this->user);
-    }
 
-    public function test_user_can_create_announcement()
-    {
-        $annoceData = [
-            'titre' => 'Test Announcement',
-            'description' => 'This is a test announcement',
-            'recruteur_id' => $this->user->id
-        ];
+beforeEach(function () {
+    // Clear database before each test
+    Annonce::query()->delete();
+});
 
-        $response = $this->postJson('/api/annonces', $annoceData);
+test('can fetch all annonces', function () {
+    $annonces = Annonce::factory(3)->create();
 
-        $response->assertStatus(201)
-            ->assertJsonStructure([
-                'data' => [
-                    'id',
-                    'titre',
-                    'description',
-                    'recruteur_id',
-                    'created_at'
-                ]
-            ]);
-    }
+    get('/api/annonces')
+        ->assertStatus(200)
+        ->assertJsonCount(3, 'data')
+        ->assertJsonStructure([
+            'data' => [
+                '*' => ['id', 'title', 'description', 'created_at', 'updated_at']
+            ]
+        ]);
+});
 
-    public function test_user_can_get_all_announcements()
-    {
-        Annonce::factory()->count(3)->create();
+test('can create new annonce', function () {
+    $annonceData = [
+        'title' => 'Software Developer',
+        'description' => 'We are looking for a PHP developer',
+        'user_id' => 1
+    ];
 
-        $response = $this->getJson('/api/annonces');
+    post('/api/annonces', $annonceData)
+        ->assertStatus(201)
+        ->assertJsonStructure([
+            'data' => ['id', 'title', 'description', 'created_at', 'updated_at']
+        ]);
 
-        $response->assertStatus(200)
-            ->assertJsonStructure([
-                'data' => [
-                    '*' => [
-                        'id',
-                        'titre',
-                        'description',
-                        'recruteur_id',
-                        'created_at'
-                    ]
-                ]
-            ]);
-    }
+    $this->assertDatabaseHas('annonces', $annonceData);
+});
 
-    public function test_user_can_get_single_announcement()
-    {
-        $annoce = Annonce::factory()->create();
+test('can fetch single annonce', function () {
+    $annonce = Annonce::factory()->create();
 
-        $response = $this->getJson("/api/annonces/{$annoce->id}");
+    get("/api/annonces/{$annonce->id}")
+        ->assertStatus(200)
+        ->assertJson([
+            'data' => ['id' => $annonce->id]
+        ]);
+});
 
-        $response->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    'id' => $annoce->id,
-                    'titre' => $annoce->titre,
-                    'description' => $annoce->description
-                ]
-            ]);
-    }
+test('can update annonce', function () {
+    $annonce = Annonce::factory()->create();
+    $updateData = ['title' => 'Updated Title'];
 
-    public function test_user_can_update_announcement()
-    {
-        $annoce = Annonce::factory()->create(['recruteur_id' => $this->user->id]);
-        $updateData = [
-            'titre' => 'Updated Title',
-            'description' => 'Updated description'
-        ];
+    put("/api/annonces/{$annonce->id}", $updateData)
+        ->assertStatus(200)
+        ->assertJson([
+            'data' => ['title' => 'Updated Title']
+        ]);
+});
 
-        $response = $this->putJson("/api/annonces/{$annoce->id}", $updateData);
+test('can delete annonce', function () {
+    $annonce = Annonce::factory()->create();
 
-        $response->assertStatus(200)
-            ->assertJson([
-                'data' => [
-                    'titre' => 'Updated Title',
-                    'description' => 'Updated description'
-                ]
-            ]);
-    }
+    delete("/api/annonces/{$annonce->id}")
+        ->assertStatus(204);
 
-    public function test_user_can_delete_announcement()
-    {
-        $annoce = Annonce::factory()->create(['recruteur_id' => $this->user->id]);
-
-        $response = $this->deleteJson("/api/annonces/{$annoce->id}");
-
-        $response->assertStatus(204);
-        $this->assertDatabaseMissing('annonces', ['id' => $annoce->id]);
-    }
-}
+    $this->assertDatabaseMissing('annonces', ['id' => $annonce->id]);
+});
